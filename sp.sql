@@ -1,33 +1,51 @@
-create or replace PROCEDURE ws_restful
-( urlRest in varchar2,
-  json in varchar2
-)
-IS
-  req utl_http.req;
-  res utl_http.resp;
-  url varchar2(4000) := urlRest;
-  name varchar2(4000);
-  buffer varchar2(4000);
-  content varchar2(4000) := json;
+DECLARE 
+    req     utl_http.req; 
+    res     utl_http.resp; 
+    urlrest VARCHAR2(100) := 'http://jsonplaceholder.typicode.com/posts/1'; 
+    name    VARCHAR2(4000); 
+    buffer  VARCHAR2(4000); 
+BEGIN 
+    req := utl_http.Begin_request(urlrest, 'GET', ' HTTP/1.1'); 
+    utl_http.Set_header(req, 'user-agent', 'mozilla/4.0'); 
+    utl_http.Set_header(req, 'content-type', 'application/json'); 
+    res := utl_http.Get_response(req); 
 
-BEGIN
-  req := utl_http.begin_request(url, 'POST',' HTTP/1.1');
-  utl_http.set_header(req, 'user-agent', 'mozilla/4.0');
-  utl_http.set_header(req, 'content-type', 'application/json');
-  utl_http.set_header(req, 'Content-Length', length(content));
+    LOOP 
+        utl_http.Read_line(res, buffer); 
+        dbms_output.Put_line(buffer); 
+    END LOOP; 
 
-  utl_http.write_text(req, content);
-  res := utl_http.get_response(req);
-  -- process the response from the HTTP call
-  BEGIN
-    loop
-      utl_http.read_line(res, buffer);
-      dbms_output.put_line(buffer);
-    end loop;
-    utl_http.end_response(res);
-  exception
-    when utl_http.end_of_body
-    then
-      utl_http.end_response(res);
-  END;
-END;
+    utl_http.End_response(res); 
+EXCEPTION 
+    WHEN utl_http.end_of_body THEN 
+      utl_http.End_response(res); 
+END; 
+
+DECLARE 
+    req     utl_http.req; 
+    res     utl_http.resp; 
+    urlrest VARCHAR2(4000) := 'http://jsonplaceholder.typicode.com/posts'; 
+    name    VARCHAR2(4000); 
+    buffer  VARCHAR2(4000); 
+    json    VARCHAR2(4000) := '{"title":"foo","body":"bar","userId":1}'; 
+BEGIN 
+    req := utl_http.Begin_request(urlrest, 'POST', ' HTTP/1.1'); 
+    utl_http.Set_header(req, 'user-agent', 'mozilla/4.0'); 
+    utl_http.Set_header(req, 'content-type', 'application/json'); 
+    utl_http.Set_header(req, 'Content-Length', Length(json)); 
+    utl_http.Write_text(req, json); 
+    res := utl_http.Get_response(req); 
+
+    BEGIN 
+        LOOP 
+            utl_http.Read_line(res, buffer); 
+
+            dbms_output.Put_line(buffer); 
+        END LOOP; 
+
+        utl_http.End_response(res); 
+    EXCEPTION 
+        WHEN utl_http.end_of_body THEN 
+          utl_http.End_response(res); 
+    END; 
+END; 
